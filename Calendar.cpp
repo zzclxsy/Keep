@@ -10,7 +10,6 @@ Calendar::Calendar(QObject *parent) : QObject(parent)
 
 bool Calendar::isCurrentMonth()
 {
-    qDebug()<<"Calendar::isCurrentMonth:"<<m_month;
     QDate date = QDate::currentDate();
     if (m_year == date.year() && m_month == date.month())
         return true;
@@ -20,7 +19,6 @@ bool Calendar::isCurrentMonth()
 
 void Calendar::reset()
 {
-    qDebug()<<"Calendar::reset";
     QDate date = QDate::currentDate();
     m_day = date.day();
     m_month = date.month();
@@ -29,7 +27,7 @@ void Calendar::reset()
 
 QString Calendar::date()
 {
-    QString date = QString("%1年 %2月 %3日").arg(m_year).arg(m_month).arg(m_day);
+    QString date = QString("%1年 %2月").arg(m_year).arg(m_month);
     return date;
 }
 
@@ -42,11 +40,13 @@ QString Calendar::now()
 QString Calendar::nextMonth()
 {
     if (m_month == 12)
+    {
         m_month = 1;
+        m_year++;
+    }
     else
         m_month++;
 
-    qDebug()<<"Calendar::nextMonth:"<<m_month;
     return CalendarView(m_year, m_month, m_day);
 }
 
@@ -59,7 +59,6 @@ QString Calendar::lastMonth()
     else
         m_month--;
 
-    qDebug()<<"Calendar::lastMonth:"<<m_month;
     return CalendarView(m_year, m_month, m_day);
 }
 
@@ -101,9 +100,26 @@ QString Calendar::gotoDate(QString date)
             break;
         int day = obj.value("day").toInt();
 
-        return CalendarView(year, month, day);;
+        m_year = year; m_month = month;
+
+        return CalendarView(year, month, m_day);;
     } while (0);
     return QString();
+}
+
+int Calendar::currDay() const
+{
+    return m_day;
+}
+
+int Calendar::currMonth() const
+{
+    return m_month;
+}
+
+int Calendar::currYear() const
+{
+    return m_year;
 }
 
 QString Calendar::CalendarView(int year, int month, int day)
@@ -119,6 +135,8 @@ QString Calendar::CalendarView(int year, int month, int day)
     nowDate["week"] = GetWeekDate(year, month, day);
 
     //当月视图
+    monthView["month"] = m_month;
+    monthView["year"] = m_year;
     monthView["dayNum"] = GetDayNumofMonth(year,month);
     monthView["week"] = GetWeekDate(year, month, 1);
     root["nowDate"] = nowDate;

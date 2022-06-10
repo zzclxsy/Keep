@@ -1,9 +1,19 @@
 import QtQuick 2.0
 import QtGraphicalEffects 1.12
 import QtQml 2.12
+import QtQuick.Controls 2.5
 Item {
     id: item1
     width: 177
+
+    //外部接口
+    property alias dataText: showText.text
+    signal dataBeChosen(string data);
+    signal hasOpen()
+    signal hasClose()
+    property var beforeITEM
+
+    //内部model数据
     property var jsonModel
     function openBox()
     {
@@ -11,6 +21,8 @@ Item {
         image.source = "qrc:/image/arrow-up.svg"
         dropShadow.visible = true
         rectangle2.visible = true
+        listView.positionViewAtIndex(listView.currentIndex, ListView.Center)
+        hasOpen()
     }
     function closeBox()
     {
@@ -18,6 +30,7 @@ Item {
         image.source = "qrc:/image/arrow-down.svg"
         dropShadow.visible = false
         rectangle2.visible = false
+        hasClose()
     }
 
     Rectangle {
@@ -103,7 +116,7 @@ Item {
         visible: false
         x: 0
         width: item1.width -5
-        height: 365
+        height: 0
         color: "#ffffff"
         radius: 5
         anchors.top: rectangle.bottom
@@ -112,20 +125,26 @@ Item {
 
         ListView {
             id: listView
+            orientation: ListView.Vertical//垂直列表
             clip: true
+            ScrollBar.vertical: ScrollBar {
+                id: scrollBar
+            }
             anchors.fill: parent
             anchors.rightMargin: 4
             anchors.leftMargin: 4
             anchors.bottomMargin: 4
             anchors.topMargin: 4
-            model:jsonModel
+            model : jsonModel
+            currentIndex:20
             delegate:
                 Rectangle {
                 height: 40
                 width: listView.width
+                property alias textColor: text.color
                 Text {
                     id:text
-                    text: name
+                    text: modelData.name
                     font.pixelSize: 20
                     anchors.fill: parent
                     horizontalAlignment: Text.AlignHCenter
@@ -136,25 +155,55 @@ Item {
                     anchors.fill: parent
                     hoverEnabled: true
                     onEntered: {
+                        if (index === listView.currentIndex)
+                            return
                         text.color = "#6699FF"
                     }
                     onExited: {
+                        if (index === listView.currentIndex)
+                            return
                         text.color = "#000000"
                     }
                     onClicked: {
                         showText.text = text.text
                         closeBox()
+                        dataBeChosen(text.text)
+                        beforeITEM.textColor = "#000000"
+                        listView.currentIndex = index
+                        listView.currentItem.textColor = "red"
+                        beforeITEM = listView.currentItem
                     }
                 }
             }
         }
     }
-    Component.onCompleted: {
-       jsonModel = []
-        jsonModel["name"] = "zz"
-        jsonModel["age"] = "11"
+
+    function setModelData(array)
+    {
+        var sum =0
+        var data = []
+        for (var i = 0; i < array.length; i++)
+        {
+            var tmp={}
+            tmp["name"] = array[i]
+            data.push(tmp)
+            sum++
+        }
+        jsonModel = data
+        if (sum*40 > 300)
+            rectangle2.height = 300
+        else
+            rectangle2.height = sum*40
     }
 
+    function defaultData(str,index)
+    {
+        showText.text = str
+        listView.positionViewAtIndex(index, ListView.Center)
+        listView.currentIndex = index
+        listView.currentItem.textColor = "red"
+        beforeITEM = listView.currentItem
+    }
 }
 
 

@@ -9,5 +9,6 @@ Window {
 
     Calendar{
         anchors.fill: parent
+        anchors.bottomMargin: -11
     }
 }

@@ -14,55 +14,134 @@ Item {
 
     function now()
     {
+        if (currObj !==null)
+        {
+            var currDay = currObj.rectText
+            currObj.focus = false
+        }
+
         var ret = calendarApi.now()
         var date = JSON.parse(ret)
-        if (date == null)
+        if (date === null)
             return
         var week = date["monthView"]["week"]
         var dayNum = date["monthView"]["dayNum"]
         var day = date["nowDate"]["day"]
-        setCalendarView(week, dayNum)
+        var month = date["monthView"]["month"]
+        var year = date["monthView"]["year"]
+
+        setCalendarView(week, dayNum, month, year)
         currMonthLight(week, day)
         title.text = calendarApi.date()
+
+        if (currObj !==null)
+        {
+            obj[parseInt(week) + parseInt(currDay) - 1].focus = true
+            currObj = obj[parseInt(week) + parseInt(currDay) - 1]
+        }
     }
 
     function lastMonth()
     {
+        if (currObj !==null)
+        {
+            var currDay = currObj.rectText
+            currObj.focus = false
+        }
         var ret = calendarApi.lastMonth()
         var date = JSON.parse(ret)
-        if (date == null)
+        if (date === null)
             return
         var week = date["monthView"]["week"]
         var dayNum = date["monthView"]["dayNum"]
-        var day = date["nowDate"]["day"]
+        var month = date["monthView"]["month"]
+        var year = date["monthView"]["year"]
 
-        setCalendarView(week, dayNum)
+        setCalendarView(week, dayNum, month, year)
         if (calendarApi.isCurrentMonth())
         {
+            var day = date["nowDate"]["day"]
             currMonthLight(week, day)
         }
         title.text = calendarApi.date()
+
+        if (currObj !==null)
+        {
+            obj[parseInt(week) + parseInt(currDay) - 1].focus = true
+            currObj = obj[parseInt(week) + parseInt(currDay) - 1]
+        }
+
     }
 
     function nextMonth()
     {
+        if (currObj !==null)
+        {
+            var currDay = currObj.rectText
+            currObj.focus = false
+        }
+
         var ret = calendarApi.nextMonth()
         var date = JSON.parse(ret)
-        if (date == null)
+        if (date === null)
             return
         var week = date["monthView"]["week"]
         var dayNum = date["monthView"]["dayNum"]
-        var day = date["nowDate"]["day"]
+        var month = date["monthView"]["month"]
+        var year = date["monthView"]["year"]
 
-        setCalendarView(week, dayNum)
+        setCalendarView(week, dayNum, month, year)
         if (calendarApi.isCurrentMonth())
         {
+            var day = date["nowDate"]["day"]
             currMonthLight(week, day)
         }
         title.text = calendarApi.date()
+
+        if (currObj !==null)
+        {
+            obj[parseInt(week) + parseInt(currDay) - 1].focus = true
+            currObj = obj[parseInt(week) + parseInt(currDay) - 1]
+        }
     }
 
-    function setCalendarView(week, dayNum)
+    function  gotoDate(gotoYear,gotoMonth)
+    {
+        if (currObj !==null)
+        {
+            var currDay = currObj.rectText
+            currObj.focus = false
+        }
+
+        var arr = {}
+        arr["year"] = gotoYear
+        arr["month"] = gotoMonth
+        arr["day"] = 1
+        var ret = calendarApi.gotoDate(JSON.stringify(arr))
+        var date = JSON.parse(ret)
+        if (date === null)
+            return
+        var week = date["monthView"]["week"]
+        var dayNum = date["monthView"]["dayNum"]
+        var month = date["monthView"]["month"]
+        var year = date["monthView"]["year"]
+
+        setCalendarView(week, dayNum, month, year)
+        if (calendarApi.isCurrentMonth())
+        {
+            var day = date["nowDate"]["day"]
+            currMonthLight(week, day)
+        }
+        title.text = calendarApi.date()
+
+        if (currObj !==null)
+        {
+            obj[parseInt(week) + parseInt(currDay) - 1].focus = true
+            currObj = obj[parseInt(week) + parseInt(currDay) - 1]
+        }
+    }
+
+    function setCalendarView(week, dayNum,month,year)
     {
         if ((week + dayNum -1) <= 35)
         {
@@ -83,28 +162,43 @@ Item {
         for(var j =0; j < dayNum; j++)
         {
             obj[week + j].rectText = j + 1
+            obj[week + j].opacity = 1
             obj[week + j].color = "#ffffff"
+            obj[week + j].month = month
+            obj[week + j].year = year
         }
 
         //取部分上月天数
         var ret = calendarApi.lastMonth()
         var date = JSON.parse(ret)
-        if (date == null)
+        if (date === null)
             return
 
         var lastDayNum = date["monthView"]["dayNum"]
+        var lastmonth = date["monthView"]["month"]
+        var lastyear = date["monthView"]["year"]
         for(j = 1; j < week; j++)
         {
             obj[j].rectText = (lastDayNum - week +j +1)
-            obj[j].color = "#50888888"
+            obj[j].month = lastmonth
+            obj[j].year = lastyear
+            obj[j].opacity = 0.5
         }
 
         //下一个月从1号开始
         var index = 1
+        if (month === 12){
+            month = 1
+            year++;
+        }
+        else
+            month++
         for(j = week +dayNum; j <= 42 ;j++)
         {
             obj[j].rectText = index
-            obj[j].color = "#50888888"
+            obj[j].month = month
+            obj[j].year = year
+            obj[j].opacity = 0.5
             index++
         }
 
@@ -112,14 +206,17 @@ Item {
     }
 
     property var obj: []
+    property var currObj:null
     Grid{
         id:grid
-        anchors.fill: parent
-        anchors.rightMargin: 134
-        anchors.topMargin: 79
+        x: 224
+        y: 79
+        width: 365
+        height: 365
+        anchors.horizontalCenter: parent.horizontalCenter
         rows: 7
         columns: 7
-        spacing:10
+        spacing:3
     }
 
     Component{
@@ -127,8 +224,13 @@ Item {
         Rectangle{
             width: 50
             height: 50
+            border.width: 2
+            border.color:"#00000000"
+            radius: 6
+            property var month
+            property var year
             property alias rectText: textComp.text
-            border.width: 1
+            property bool isCanChoice: true
             Text {
                 id:textComp
                 anchors.fill: parent
@@ -136,17 +238,61 @@ Item {
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
             }
+
             onFocusChanged: {
-                if (focus === true)
-                    border.color="red"
-                else
-                    border.color="#000000"
+                if (focus === false){
+                    border.color="#00000000"
+                }else {
+                    if(!isCanChoice)
+                        return
+                    border.color="#FF6666"
+                }
+
             }
+
+
             MouseArea{
                 anchors.fill: parent
-                onClicked: {
-                    parent.focus = true
+                hoverEnabled: true
+
+                onEntered: {
+                    if(!isCanChoice)
+                        return
+
+                    if (parent.focus ===false)
+                        border.color="#9999FF"
+
                 }
+                onExited: {
+                    if (!parent.focus)
+                        border.color="#00000000"
+                }
+                onClicked: {
+                    yearcomboBox.closeBox()
+                    monthcomboBox.closeBox()
+                    parent.focus = true
+                    currObj = parent
+                    console.log(parent.year+"年" +parent.month +"月"+ parent.rectText + "日")
+                    if (calendarApi.currMonth === 1){
+                        if (parent.month === 12){
+                            lastMonth()
+                            return
+                        }
+                    }else if (calendarApi.currMonth === 12)
+                    {
+                        if (parent.month === 1){
+                            nextMonth()
+                            return
+                        }
+                    }
+
+                    if (parent.month < calendarApi.currMonth)
+                        lastMonth()
+                    else if (parent.month > calendarApi.currMonth)
+                        nextMonth()
+
+                }
+
             }
         }
     }
@@ -162,101 +308,78 @@ Item {
         anchors.leftMargin: 0
         anchors.topMargin: 0
 
-        Text {
-            id: title
-            anchors.fill: parent
-            font.pixelSize: 20
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignVCenter
-        }
-    }
-
-    Rectangle {
-        id: rectangle
-        x: 532
-        y: 94
-        width: 108
-        height: 48
-        color: "#ffffff"
-
-        Text {
-            id: text1
-            text: qsTr("last")
-            anchors.fill: parent
-            font.pixelSize: 12
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignVCenter
-        }
-        MouseArea{
-            anchors.fill: parent
-            onClicked: {
-                lastMonth()
+        ComboBox {
+            id: monthcomboBox
+            x: 232
+            y: 0
+            width: 123
+            height: 44
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.right: parent.right
+            anchors.rightMargin: 147
+            anchors.verticalCenterOffset: 0
+            onDataBeChosen: {
+                 gotoDate(parseInt(yearcomboBox.dataText), parseInt(data))
+            }
+            Connections{
+                target: yearcomboBox
+                onHasOpen:{
+                    monthcomboBox.closeBox()
+                }
             }
         }
-    }
 
-    Rectangle {
-        id: rectangle1
-        x: 532
-        y: 166
-        width: 108
-        height: 48
-        color: "#ffffff"
-
-        Text {
-            id: text2
-            text: qsTr("now")
-            anchors.fill: parent
-            font.pixelSize: 12
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignVCenter
-        }
-        MouseArea{
-            anchors.fill: parent
-            onClicked: {
-                console.log("34")
-                now()
+        ComboBox {
+            id: yearcomboBox
+            y: 31
+            width: 123
+            height: 44
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.left: parent.left
+            anchors.leftMargin: 147
+            anchors.verticalCenterOffset: 0
+            onDataBeChosen: {
+                 gotoDate(parseInt(data), parseInt(monthcomboBox.dataText))
             }
-        }
-    }
 
-    Rectangle {
-        id: rectangle2
-        x: 532
-        y: 245
-        width: 108
-        height: 48
-        color: "#ffffff"
-
-        Text {
-            id: text3
-            text: qsTr("next")
-            anchors.fill: parent
-            font.pixelSize: 12
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignVCenter
-        }
-        MouseArea{
-            anchors.fill: parent
-            onClicked: {
-                nextMonth()
+            Connections{
+                target: monthcomboBox
+                onHasOpen:{
+                    yearcomboBox.closeBox()
+                }
             }
         }
     }
 
     Component.onCompleted: {
-        rectComp.createObject(grid,{"rectText":"一"})
-        rectComp.createObject(grid,{"rectText":"二"})
-        rectComp.createObject(grid,{"rectText":"三"})
-        rectComp.createObject(grid,{"rectText":"四"})
-        rectComp.createObject(grid,{"rectText":"五"})
-        rectComp.createObject(grid,{"rectText":"六"})
-        rectComp.createObject(grid,{"rectText":"日"})
+        rectComp.createObject(grid,{"rectText":"一","isCanChoice":false})
+        rectComp.createObject(grid,{"rectText":"二","isCanChoice":false})
+        rectComp.createObject(grid,{"rectText":"三","isCanChoice":false})
+        rectComp.createObject(grid,{"rectText":"四","isCanChoice":false})
+        rectComp.createObject(grid,{"rectText":"五","isCanChoice":false})
+        rectComp.createObject(grid,{"rectText":"六","isCanChoice":false})
+        rectComp.createObject(grid,{"rectText":"日","isCanChoice":false})
 
         for(var i=1;i <= 42;i++)
         {
             obj[i]=(rectComp.createObject(grid))
         }
+        now()
+        var arr=[]
+        for (i = 1; i <= 12 ; i++)
+        {
+            arr.push(i+"月")
+        }
+
+        monthcomboBox.setModelData(arr)
+        monthcomboBox.defaultData(calendarApi.currMonth + "月",calendarApi.currMonth - 1)
+        arr=[]
+        for (i = 1900; i <= 2090 ; i++)
+        {
+            arr.push(i+"年")
+        }
+        yearcomboBox.setModelData(arr)
+        yearcomboBox.defaultData(calendarApi.currYear + "年",calendarApi.currYear - 1900)
     }
 }
 
